@@ -3,20 +3,23 @@
 const express = require('express');
 const router = express.Router();
 const spaceController = require('../controllers/spaceController');
+const { protect, authorizeRoles } = require('../middleware/authMiddleware'); // authMiddleware इम्पोर्ट करें
 
-// ➕ Add a new space (bed)
-router.post('/', spaceController.addSpace);
+// New: Route to get all available spaces
+router.get('/available', protect, authorizeRoles(['Admin', 'Manager', 'Warden']), spaceController.getAvailableSpaces);
 
-// 📋 Get all spaces (with optional filtering by status or sharingType)
-router.get('/', spaceController.getAllSpaces);
+// New: Route to book a space (changes status to 'Booked')
+router.post('/book', protect, authorizeRoles(['Admin', 'Manager', 'Warden']), spaceController.bookSpace);
 
-// 🔍 Get a single space by ID
-router.get('/:id', spaceController.getSpaceById);
+// New: Route to assign a space to a student (changes status to 'Occupied')
+router.post('/assign', protect, authorizeRoles(['Admin', 'Manager', 'Warden']), spaceController.assignSpaceToStudent);
 
-// ✏️ Update a space by ID
-router.put('/:id', spaceController.updateSpace);
 
-// 🗑️ Delete a space by ID (use with caution)
-router.delete('/:id', spaceController.deleteSpace);
+// Existing CRUD routes for spaces (ensure these are present)
+router.post('/', protect, authorizeRoles(['Admin', 'Manager', 'Warden']), spaceController.addSpace);
+router.get('/', protect, authorizeRoles(['Admin', 'Manager', 'Warden']), spaceController.getAllSpaces);
+router.get('/:id', protect, authorizeRoles(['Admin', 'Manager', 'Warden']), spaceController.getSpaceById);
+router.put('/:id', protect, authorizeRoles(['Admin', 'Manager', 'Warden']), spaceController.updateSpace);
+router.delete('/:id', protect, authorizeRoles(['Admin']), spaceController.deleteSpace); // Only Admin can delete
 
 module.exports = router;

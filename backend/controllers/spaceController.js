@@ -1,94 +1,202 @@
 // 📁 D:\AppDevelopment\instay-app\backend\controllers\spaceController.js
 
-const Space = require('../models/Space'); // Space मॉडल को इम्पोर्ट करें
+const Space = require('../models/Space');
+const Student = require('../models/Student'); // Student मॉडल भी चाहिए
 
-// ➕ Add a New Space (Bed)
-exports.addSpace = async (req, res) => {
+// New: Get all available spaces (status 'Available')
+exports.getAvailableSpaces = async (req, res) => {
     try {
-        const newSpace = new Space(req.body);
-        const savedSpace = await newSpace.save();
-        res.status(201).json(savedSpace);
-    } catch (err) {
-        console.error('Error adding space:', err);
-        // यदि roomNumber और bedNumber का संयोजन अद्वितीय नहीं है तो विशिष्ट एरर हैंडलिंग
-        if (err.code === 11000 && err.keyValue) {
-            if (err.keyValue.occupiedBy) { // यदि यह occupiedBy के कारण एक डुप्लिकेट एरर है
-                return res.status(400).json({ message: 'This bed is already occupied by another student.' });
-            }
-            if (err.keyValue.roomNumber && err.keyValue.bedNumber) { // यदि यह roomNumber+bedNumber के कारण है
-                return res.status(400).json({ message: `Space with Room ${err.keyValue.roomNumber} and Bed ${err.keyValue.bedNumber} already exists.` });
-            }
-        }
-        res.status(500).json({ error: 'Failed to add space', details: err.message });
+        const availableSpaces = await Space.find({ status: 'Available' }).sort('roomNumber bedNumber');
+        res.status(200).json(availableSpaces);
+    } catch (error) {
+        console.error('Error fetching available spaces:', error);
+        res.status(500).json({ message: 'Server error fetching available spaces.', error: error.message });
     }
 };
 
-// 📋 Get All Spaces
-exports.getAllSpaces = async (req, res) => {
+// New: Book a space (changes status to 'Booked', doesn't assign student yet)
+// This is for preliminary booking, like when a student pays a booking amount.
+exports.bookSpace = async (req, res) => {
     try {
-        // आप यहां फ़िल्टरिंग जोड़ सकते हैं, जैसे ?status=Available
-        const filter = {};
-        if (req.query.status) {
-            filter.status = req.query.status;
-        }
-        if (req.query.sharingType) {
-            filter.sharingType = req.query.sharingType;
+        const { spaceId, studentId, bookingAmount } = req.body;
+
+        if (!spaceId || !studentId || bookingAmount === undefined) {
+            return res.status(400).json({ message: 'Space ID, Student ID, and Booking Amount are required.' });
         }
 
-        const spaces = await Space.find(filter)
-                                  .populate('occupiedBy', 'name email phone') // यदि कोई छात्र इस स्थान पर है तो उसकी जानकारी भी प्राप्त करें
-                                  .sort({ roomNumber: 1, bedNumber: 1 }); // रूम और बेड नंबर से सॉर्ट करें
-        res.json(spaces);
-    } catch (err) {
-        console.error('Error fetching spaces:', err);
-        res.status(500).json({ error: 'Failed to fetch spaces', details: err.message });
-    }
-};
-
-// 🔍 Get a Single Space by ID
-exports.getSpaceById = async (req, res) => {
-    try {
-        const space = await Space.findById(req.params.id).populate('occupiedBy', 'name email phone');
+        const space = await Space.findById(spaceId);
         if (!space) {
             return res.status(404).json({ message: 'Space not found.' });
         }
-        res.json(space);
-    } catch (err) {
-        console.error('Error fetching space by ID:', err);
-        res.status(500).json({ error: 'Failed to fetch space', details: err.message });
+
+        if (space.status !== 'Available') {
+            return res.status(400).json({ message: `Space is not available for booking. Current status: ${space.status}` });
+        }
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        // Check if student already has a space or a booked space
+        if (student.assignedSpace || student.status === 'Booked' || student.status === 'Active') { // Added 'Active'
+            return res.status(400).json({ message: 'Student already has an assigned space or a pending booking.' });
+        }
+
+        // Update space status to 'Booked' and reference the student
+        // The student's actual 'assignedSpace' and 'status' will be updated in assignSpaceToStudent
+        space.status = 'Booked';
+        space.occupiedBy = studentId; // Temporarily link for booking
+        await space.save();
+
+        // Update student's booking details
+        student.status = 'Booked';
+        student.bookingAmount = bookingAmount;
+        // student.assignedSpace = spaceId; // Do NOT assign space here. This will be done in assignSpaceToStudent
+        await student.save();
+
+        res.status(200).json({ message: 'Space booked successfully!', space, student });
+
+    } catch (error) {
+        // Handle unique constraint violation for occupiedBy if it occurs (though it shouldn't now with sparse index)
+        if (error.code === 11000) {
+            return res.status(409).json({ message: 'This space is already booked or occupied by another student.' });
+        }
+        console.error('Error booking space:', error);
+        res.status(500).json({ message: 'Server error during space booking.', error: error.message });
     }
 };
 
-// ✏️ Update Space
+// New: Assign a booked space to a student (finalizes assignment, sets isOccupied)
+// This will be used after booking and when student confirms full details/check-in
+exports.assignSpaceToStudent = async (req, res) => {
+    try {
+        const { spaceId, studentId, checkInDate } = req.body; // Added checkInDate
+
+        if (!spaceId || !studentId || !checkInDate) { // checkInDate is now required
+            return res.status(400).json({ message: 'Space ID, Student ID, and Check-in Date are required for assignment.' });
+        }
+
+        const space = await Space.findById(spaceId);
+        if (!space) {
+            return res.status(404).json({ message: 'Space not found.' });
+        }
+
+        // Check if the space is booked by *this* specific student
+        if (space.status !== 'Booked' || !space.occupiedBy || !space.occupiedBy.equals(studentId)) {
+            return res.status(400).json({ message: 'Space is not booked by this student or is not in a "Booked" status.' });
+        }
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        // Ensure the student is in 'Booked' status and matches the space's occupiedBy
+        if (student.status !== 'Booked' || !student.assignedSpace || !student.assignedSpace.equals(spaceId)) {
+            // This check might be too strict if booking doesn't set assignedSpace.
+            // Let's refine based on our workflow: student status should be 'Booked'.
+            // The logic above in bookSpace doesn't set assignedSpace, so this check should be adjusted.
+            if(student.status !== 'Booked'){
+                 return res.status(400).json({ message: 'Student is not in a "Booked" status.' });
+            }
+        }
+        
+        // If student already has an assigned space (meaning they are already 'Active' somewhere)
+        if (student.assignedSpace && student.status === 'Active') {
+            return res.status(400).json({ message: 'Student already has an assigned space and is active.' });
+        }
+
+
+        // Update space details
+        space.status = 'Occupied';
+        space.isOccupied = true;
+        // occupiedBy is already set during booking, ensure it's correct
+        // if (!space.occupiedBy || !space.occupiedBy.equals(studentId)) {
+        //      space.occupiedBy = studentId; // Ensure occupiedBy is set
+        // }
+        await space.save();
+
+        // Update student details
+        student.assignedSpace = spaceId;
+        student.checkInDate = new Date(checkInDate); // Set the actual check-in date
+        student.status = 'Active'; // Assuming student becomes 'Active' after space assignment
+        await student.save();
+
+        res.status(200).json({ message: 'Space successfully assigned to student!', space, student });
+
+    } catch (error) {
+        console.error('Error assigning space to student:', error);
+        res.status(500).json({ message: 'Server error during space assignment.', error: error.message });
+    }
+};
+
+
+// Existing Space CRUD operations
+exports.addSpace = async (req, res) => {
+    try {
+        const { roomNumber, bedNumber } = req.body;
+
+        // Check if a space with the same room and bed number already exists
+        const existingSpace = await Space.findOne({ roomNumber, bedNumber });
+        if (existingSpace) {
+            return res.status(409).json({ message: 'A space with this room and bed number already exists.' });
+        }
+
+        const newSpace = new Space(req.body);
+        await newSpace.save();
+        res.status(201).json({ message: 'Space added successfully!', space: newSpace });
+    } catch (error) {
+        console.error('Error adding space:', error);
+        res.status(500).json({ message: 'Server error.', error: error.message });
+    }
+};
+
+exports.getAllSpaces = async (req, res) => {
+    try {
+        const spaces = await Space.find().populate('occupiedBy', 'name studentUID'); // Populate student details
+        res.status(200).json(spaces);
+    } catch (error) {
+        console.error('Error fetching spaces:', error);
+        res.status(500).json({ message: 'Server error.', error: error.message });
+    }
+};
+
+exports.getSpaceById = async (req, res) => {
+    try {
+        const space = await Space.findById(req.params.id).populate('occupiedBy', 'name studentUID');
+        if (!space) {
+            return res.status(404).json({ message: 'Space not found.' });
+        }
+        res.status(200).json(space);
+    } catch (error) {
+        console.error('Error fetching space by ID:', error);
+        res.status(500).json({ message: 'Server error.', error: error.message });
+    }
+};
+
 exports.updateSpace = async (req, res) => {
     try {
-        const { id } = req.params;
-        const updatedSpace = await Space.findByIdAndUpdate(id, req.body, { new: true });
+        const updatedSpace = await Space.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
         if (!updatedSpace) {
             return res.status(404).json({ message: 'Space not found.' });
         }
-        res.json(updatedSpace);
-    } catch (err) {
-        console.error('Error updating space:', err);
-        // डुप्लिकेट key एरर के लिए विशिष्ट हैंडलिंग (उदाहरण के लिए, यदि आप एक ऐसे छात्र को असाइन करने का प्रयास करते हैं जो पहले से ही कहीं और है)
-        if (err.code === 11000 && err.keyValue && err.keyValue.occupiedBy) {
-            return res.status(400).json({ message: 'The student you are trying to assign is already occupying another bed.' });
-        }
-        res.status(500).json({ error: 'Failed to update space', details: err.message });
+        res.status(200).json({ message: 'Space updated successfully!', space: updatedSpace });
+    } catch (error) {
+        console.error('Error updating space:', error);
+        res.status(500).json({ message: 'Server error.', error: error.message });
     }
 };
 
-// 🗑️ Delete Space (Use with caution: Deleting a space should ideally not happen if students are associated)
 exports.deleteSpace = async (req, res) => {
     try {
-        const { id } = req.params;
-        const deletedSpace = await Space.findByIdAndDelete(id);
+        const deletedSpace = await Space.findByIdAndDelete(req.params.id);
         if (!deletedSpace) {
             return res.status(404).json({ message: 'Space not found.' });
         }
-        res.json({ message: 'Space deleted successfully.' });
-    } catch (err) {
-        console.error('Error deleting space:', err);
-        res.status(500).json({ error: 'Failed to delete space', details: err.message });
+        res.status(200).json({ message: 'Space deleted successfully!' });
+    } catch (error) {
+        console.error('Error deleting space:', error);
+        res.status(500).json({ message: 'Server error.', error: error.message });
     }
 };

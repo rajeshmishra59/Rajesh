@@ -2,21 +2,26 @@
 
 const express = require('express');
 const router = express.Router();
-const studentController = require('../controllers/studentController'); // studentController को इम्पोर्ट करें
+const studentController = require('../controllers/studentController');
+// ✨ UPDATED: Corrected import for authMiddleware ✨
+// authMiddleware एक ऑब्जेक्ट है जिसमें protect और authorizeRoles फंक्शन्स हैं।
+// हमें सीधे protect फंक्शन का उपयोग करना होगा।
+const { protect, authorizeRoles } = require('../middleware/authMiddleware'); 
 
-// ➕ Add a new student
-router.post('/', studentController.addStudent);
+// New route for student enrollment (basic details)
+// अब protect फंक्शन सीधे मिडलवेयर के रूप में उपयोग किया गया है
+router.post('/enroll', protect, studentController.enrollStudent);
 
-// 📋 Get all students
-router.get('/', studentController.getAllStudents); // यहाँ एरर आ रही थी (लाइन 9)
+// Existing routes (ensure these are present)
+// सभी routes में protect मिडलवेयर का उपयोग करें
+router.post('/', protect, studentController.addStudent); 
+router.get('/', protect, studentController.getAllStudents);
+router.get('/:id', protect, studentController.getStudentById);
+router.put('/:id', protect, studentController.updateStudent);
+router.delete('/:id', protect, studentController.deleteStudent);
 
-// 🔍 Get a single student by ID
-router.get('/:id', studentController.getStudentById);
+// New route to get students by status
+router.get('/status', protect, studentController.getStudentsByStatus);
 
-// ✏️ Update a student by ID
-router.put('/:id', studentController.updateStudent);
-
-// 🗑️ Delete (Soft Delete) a student by ID
-router.delete('/:id', studentController.deleteStudent); // सुनिश्चित करें कि यह सही नाम है
 
 module.exports = router;
