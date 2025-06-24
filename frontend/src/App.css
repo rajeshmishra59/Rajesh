@@ -1,0 +1,217 @@
+/* 📁 D:\AppDevelopment\instay-app\frontend\src\App.css */
+
+/* Basic Reset and Global Styles */
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f4f7f6; /* Light grey background */
+  overflow-x: hidden; /* Prevent horizontal scrollbar on mobile */
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Navbar NavLink active style */
+.active-link {
+  background-color: #34495e; /* Darker background for active link */
+  border-left: 5px solid #3498db; /* Blue border for active link */
+  padding-left: 15px !important; /* Adjust for the border */
+}
+
+.active-link:hover {
+  background-color: #34495e !important; /* Keep same on hover */
+}
+
+/* General button styles */
+button {
+  padding: 10px 18px; /* Slightly larger padding */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem; /* Slightly larger font */
+  transition: background-color 0.2s ease-in-out;
+  margin: 5px; /* Add some margin around buttons */
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* Form and Table general container styles */
+form, .table-container { /* Added .table-container for consistency */
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
+}
+
+/* Input field general styles */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+input[type="number"],
+input[type="password"],
+select,
+textarea {
+  width: calc(100% - 22px); /* Adjust for padding (10px left+right padding + 1px left+right border) */
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box; /* Include padding and border in width */
+  font-size: 1rem;
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th, table td {
+  border: 1px solid #e0e0e0;
+  padding: 12px;
+  text-align: left;
+}
+
+table th {
+  background-color: #f8f8f8;
+  font-weight: bold;
+  color: #333;
+}
+
+table tbody tr:nth-child(even) {
+  background-color: #fdfdfd;
+}
+
+table tbody tr:hover {
+  background-color: #f0f0f0;
+}
+
+/* Sidebar Specific Styles */
+.sidebar {
+  width: 200px;
+  min-width: 200px; /* Ensure it maintains width */
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #2c3e50;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+  z-index: 1000;
+  transition: transform 0.3s ease-in-out; /* For slide effect */
+}
+
+/* Main Content Area */
+.main-content {
+  /* This margin will be overridden by media queries on small screens */
+  margin-left: 200px; /* Space for sidebar */
+  padding: 20px;
+  flex-grow: 1; /* Allows content to take available space */
+}
+
+/* Hamburger Menu Icon */
+.hamburger-menu {
+  display: none; /* Hide by default on large screens */
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 25px;
+  cursor: pointer;
+  position: fixed; /* Keep it fixed at the top-left */
+  top: 20px;
+  left: 20px;
+  z-index: 1100; /* Above sidebar */
+  background-color: white; /* Give it a background for visibility */
+  padding: 5px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.hamburger-menu .bar {
+  width: 100%;
+  height: 3px;
+  background-color: #2c3e50; /* Color of the bars */
+  border-radius: 2px;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Media Queries for Responsive Design */
+
+/* For screens smaller than 768px (common breakpoint for tablets/mobile) */
+@media (max-width: 768px) {
+  /* Hide sidebar by default */
+  .sidebar {
+    transform: translateX(-200px); /* Move off-screen to the left */
+    box-shadow: none; /* Remove shadow when hidden */
+  }
+
+  /* Show sidebar when 'open' class is applied */
+  .sidebar.open {
+    transform: translateX(0); /* Slide into view */
+    box-shadow: 2px 0 5px rgba(0,0,0,0.2); /* Add shadow when open */
+  }
+
+  /* Show hamburger menu */
+  .hamburger-menu {
+    display: flex; /* Show hamburger menu */
+  }
+
+  /* Adjust main content to start from the left edge */
+  .main-content {
+    margin-left: 0; /* Remove margin for sidebar */
+    padding: 15px; /* Slightly less padding on mobile */
+  }
+
+  /* Adjust form and table styles for better mobile experience */
+  form, .table-container {
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="number"],
+  input[type="password"],
+  select,
+  textarea {
+    width: 100%; /* Full width */
+    margin-bottom: 10px; /* Less margin */
+  }
+
+  /* Make tables scrollable horizontally on small screens */
+  table, .table-container {
+    display: block; /* Allows table to overflow */
+    overflow-x: auto; /* Adds horizontal scroll if content overflows */
+    white-space: nowrap; /* Prevents text from wrapping within cells */
+  }
+
+  /* Ensure table headers and cells are not too small */
+  table th, table td {
+    padding: 8px; /* Smaller padding */
+    font-size: 0.85rem; /* Smaller font size */
+  }
+
+  /* For very small screens, adjust header font size */
+  h1, h2, h3 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
+}
+
+/* Backdrop for mobile menu when open (to dim background) */
+/* This needs to be applied to the div containing the content, usually a sibling of sidebar */
+/* Note: this styling on .main-content::before might not work as intended
+   if .main-content is not a direct sibling of .sidebar in the DOM */
+/* For now, we are relying on sidebar's z-index and transform */
