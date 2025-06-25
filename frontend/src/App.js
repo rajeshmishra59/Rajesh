@@ -4,17 +4,21 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './components/Login';
-import DashboardPage from './pages/Home';
+// ✨ UPDATED: DashboardPage का इम्पोर्ट 'pages/Home' से हटा दिया गया है
+// import DashboardPage from './pages/Home'; // हटा दिया गया
 import StudentList from './components/StudentList';
 import EnrollStudentForm from './pages/students/EnrollStudentForm';
 import SpaceList from './components/SpaceList';
-import BookSpaceForm from './pages/spaces/BookSpaceForm'; // NEW IMPORT FOR BOOK SPACE
+import BookSpaceForm from './pages/spaces/BookSpaceForm'; 
 import PaymentList from './components/PaymentList';
 import ExpenseList from './components/ExpenseList';
 import ComplaintList from './components/ComplaintList';
 import ReportPage from './components/Reports';
 import Navbar from './components/Navbar';
 import './App.css';
+
+// ✨ NEW IMPORT: अपने नए Dashboard कंपोनेंट को इम्पोर्ट करें ✨
+import Dashboard from './pages/dashboard/Dashboard'; 
 
 // PrivateRoute Component
 const PrivateRoute = ({ children, allowedRoles }) => {
@@ -49,7 +53,8 @@ function App() {
               path="/dashboard" 
               element={
                 <PrivateRoute>
-                  <DashboardPage />
+                  {/* ✨ UPDATED: DashboardPage के बजाय सीधे नए Dashboard कंपोनेंट का उपयोग करें ✨ */}
+                  <Dashboard /> 
                 </PrivateRoute>
               } 
             />
@@ -77,7 +82,6 @@ function App() {
                 </PrivateRoute>
               } 
             />
-            {/* NEW ROUTE FOR BOOK SPACE */}
             <Route 
               path="/spaces/book" 
               element={
