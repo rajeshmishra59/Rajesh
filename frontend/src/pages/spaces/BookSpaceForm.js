@@ -1,6 +1,6 @@
 // 📁 frontend/src/pages/spaces/BookSpaceForm.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // ✨ FIXED: Changed '=>' to 'from' ✨
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
@@ -12,6 +12,8 @@ const BookSpaceForm = () => {
     const [selectedSpaceId, setSelectedSpaceId] = useState('');
     const [selectedStudentId, setSelectedStudentId] = useState('');
     const [bookingAmount, setBookingAmount] = useState('');
+    const [paymentMode, setPaymentMode] = useState(''); 
+    const [paymentDate, setPaymentDate] = useState(''); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -26,14 +28,12 @@ const BookSpaceForm = () => {
                     }
                 };
 
-                // Fetch available spaces
-                const spacesRes = await axios.get('http://localhost:5000/api/spaces/available', config);
+                // ✨ UPDATED: Fetch available spaces - Corrected API endpoint URL ✨
+                // बैकएंड राउट अब '/api/spaces/admin/spaces/available' है।
+                const spacesRes = await axios.get('http://localhost:5000/api/spaces/admin/spaces/available', config);
                 setAvailableSpaces(spacesRes.data);
 
                 // Fetch students who are 'Enrolled' and do not have an assigned space or booking
-                // This assumes /api/students endpoint can return all students
-                // and we filter client-side. If performance is an issue with many students,
-                // a dedicated backend endpoint to get 'eligible' students would be better.
                 const studentsRes = await axios.get('http://localhost:5000/api/students', config);
                 const eligibleStudents = studentsRes.data.filter(student => 
                     student.status === 'Enrolled' && !student.assignedSpace && !student.bookingAmount
@@ -43,20 +43,22 @@ const BookSpaceForm = () => {
             } catch (err) {
                 console.error('Error fetching data for booking:', err);
                 setError(err.response?.data?.message || 'Failed to load data for booking form.');
-                Swal.fire('Error', 'Failed to load required data.', 'error');
+                Swal.fire('Error', err.response?.data?.message || 'Required data could not be loaded. Please check network and permissions.', 'error');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchRequiredData();
+        if (token) { // Ensure token exists before attempting to fetch data
+            fetchRequiredData();
+        }
     }, [token]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!selectedSpaceId || !selectedStudentId || !bookingAmount) {
-            Swal.fire('Error', 'Please select a space, a student, and enter booking amount.', 'error');
+        if (!selectedSpaceId || !selectedStudentId || !bookingAmount || !paymentMode || !paymentDate) {
+            Swal.fire('Error', 'Please fill all required fields: Space, Student, Booking Amount, Payment Mode, and Payment Date.', 'error');
             return;
         }
 
@@ -68,9 +70,17 @@ const BookSpaceForm = () => {
                 }
             };
 
+            // ✨ UPDATED: Book Space - Corrected API endpoint URL ✨
+            // बैकएंड राउट अब '/api/spaces/admin/space/book' है।
             const response = await axios.post(
-                'http://localhost:5000/api/spaces/book',
-                { spaceId: selectedSpaceId, studentId: selectedStudentId, bookingAmount: parseFloat(bookingAmount) },
+                'http://localhost:5000/api/spaces/admin/space/book', // Corrected URL
+                { 
+                    spaceId: selectedSpaceId, 
+                    studentId: selectedStudentId, 
+                    bookingAmount: parseFloat(bookingAmount),
+                    paymentMode: paymentMode, 
+                    paymentDate: paymentDate  
+                },
                 config
             );
 
@@ -80,9 +90,12 @@ const BookSpaceForm = () => {
             setSelectedSpaceId('');
             setSelectedStudentId('');
             setBookingAmount('');
+            setPaymentMode(''); 
+            setPaymentDate(''); 
             
             // Re-fetch data to reflect changes
-            const spacesRes = await axios.get('http://localhost:5000/api/spaces/available', config);
+            // ✨ Ensure re-fetch also uses correct URLs ✨
+            const spacesRes = await axios.get('http://localhost:5000/api/spaces/admin/spaces/available', config);
             setAvailableSpaces(spacesRes.data);
             const studentsRes = await axios.get('http://localhost:5000/api/students', config);
             const eligibleStudents = studentsRes.data.filter(student => 
@@ -163,6 +176,36 @@ const BookSpaceForm = () => {
                         name="bookingAmount"
                         value={bookingAmount}
                         onChange={(e) => setBookingAmount(e.target.value)}
+                        required
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="paymentMode">Payment Mode:</label>
+                    <select
+                        id="paymentMode"
+                        name="paymentMode"
+                        value={paymentMode}
+                        onChange={(e) => setPaymentMode(e.target.value)}
+                        required
+                    >
+                        <option value="">-- Select Payment Mode --</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Online Transfer">Online Transfer</option>
+                        <option value="Card">Card</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="paymentDate">Payment Date:</label>
+                    <input
+                        type="date"
+                        id="paymentDate"
+                        name="paymentDate"
+                        value={paymentDate}
+                        onChange={(e) => setPaymentDate(e.target.value)}
                         required
                     />
                 </div>

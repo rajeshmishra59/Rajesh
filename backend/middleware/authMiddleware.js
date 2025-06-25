@@ -1,57 +1,73 @@
-// 📁 D:\AppDevelopment\instay-app\backend\middleware/authMiddleware.js
+// 📁 D:\AppDevelopment\instay-app\backend\middleware\authMiddleware.js
 
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/User'); 
+// ✨ UPDATED: Corrected path for ErrorHandler and catchAsyncError ✨
+// 'middleware' फ़ोल्डर से 'utils' फ़ोल्डर तक पहुँचने के लिए केवल एक '../' आवश्यक है।
+const ErrorHandler = require('../utils/errorHandler'); 
+const catchAsyncError = require('../utils/catchAsyncError'); // फ़ाइल का नाम 'catchAsyncError' (singular) है
 
-// यह सुनिश्चित करने के लिए मिडिलवेयर कि यूजर लॉग इन है
-const protect = async (req, res, next) => {
-    let token;
 
-    // HTTP हेडर में 'Authorization' फ़ील्ड से टोकन की जाँच करें
-    // यह 'Bearer TOKEN_STRING' फॉर्मेट में होता है
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        try {
-            // 'Bearer' स्ट्रिंग को हटाकर टोकन प्राप्त करें
-            token = req.headers.authorization.split(' ')[1];
+// Middleware to check if user is authenticated (टोकन को सत्यापित करता है)
+// यह catchAsyncError HOC (Higher-Order Component) का उपयोग करता है
+exports.isAuthenticatedUser = catchAsyncError(async (req, res, next) => {
+    // कुकीज़ से टोकन लेने का प्रयास करें
+    const { token } = req.cookies; 
 
-            // टोकन को सत्यापित करें
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Authorization हेडर से टोकन लेने का प्रयास करें (जैसे 'Bearer TOKEN')
+    let authorizationHeader = req.headers.authorization;
+    let tokenFromHeader;
 
-            // यूजर ID का उपयोग करके यूजर को डेटाबेस से ढूंढें
-            const userFromDB = await User.findById(decoded.id).select('-password'); // पासवर्ड को छोड़कर
-
-            if (!userFromDB) {
-                // यदि यूजर डेटाबेस में नहीं मिलता है
-                return res.status(401).json({ message: 'Not authorized, user not found.' });
-            }
-
-            // ✨ UPDATED: req.user को एक प्लेन ऑब्जेक्ट के रूप में सेट करें जिसमें रोल भी शामिल हो ✨
-            req.user = {
-                _id: userFromDB._id,
-                username: userFromDB.username,
-                role: decoded.role, // टोकन से सीधे रोल का उपयोग करें, यह अधिक विश्वसनीय है
-                // यदि आपको userFromDB से अन्य फ़ील्ड की आवश्यकता है, तो उन्हें यहाँ जोड़ें
-            };
-
-            next(); // अगले मिडिलवेयर/राउट हैंडलर पर जाएँ
-        } catch (error) {
-            console.error('Not authorized, token failed:', error.message);
-            res.status(401).json({ message: 'Not authorized, token failed.' });
-        }
-    } else { // यदि कोई टोकन प्रदान नहीं किया गया है
-        res.status(401).json({ message: 'Not authorized, no token.' });
+    if (authorizationHeader && authorizationHeader.startsWith('Bearer')) {
+        tokenFromHeader = authorizationHeader.split(' ')[1];
     }
-};
 
-// यह सुनिश्चित करने के लिए मिडिलवेयर कि यूजर के पास विशिष्ट भूमिका है
-const authorizeRoles = (...roles) => {
-    return (req, res, next) => {
-        // अब req.user हमेशा एक प्लेन ऑब्जेक्ट होगा जिसमें req.user.role सही होगा
-        if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({ message: `User role ${req.user && req.user.role ? req.user.role : 'unauthorized'} is not authorized to access this route.` });
+    // अंतिम टोकन (जो भी उपलब्ध हो)
+    const finalToken = token || tokenFromHeader; 
+
+    if (!finalToken) {
+        return next(new ErrorHandler('कृपया इस संसाधन तक पहुँचने के लिए लॉगिन करें।', 401));
+    }
+
+    try {
+        // JWT टोकन को सत्यापित करें
+        const decodedData = jwt.verify(finalToken, process.env.JWT_SECRET);
+        
+        // डिकोड किए गए ID का उपयोग करके यूजर को डेटाबेस से खोजें
+        req.user = await User.findById(decodedData.id);
+
+        if (!req.user) {
+            return next(new ErrorHandler('प्रमाणीकृत नहीं: उपयोगकर्ता डेटाबेस में नहीं मिला।', 401));
         }
-        next();
+
+        // टोकन में मौजूद रोल को req.user पर असाइन करें (यह सुनिश्चित करता है कि रोल अपडेटेड हो)
+        req.user.role = decodedData.role; 
+
+        next(); // अगले मिडिलवेयर या राउट हैंडलर पर जाएँ
+
+    } catch (error) {
+        console.error('टोकन सत्यापन विफल रहा:', error.message); 
+        return next(new ErrorHandler('अमान्य या समाप्त हो गया टोकन। कृपया फिर से लॉगिन करें।', 401));
+    }
+});
+
+
+// Middleware to authorize user roles (यूजर की भूमिकाओं की जाँच करता है)
+exports.authorizeRoles = (...roles) => {
+    // सुनिश्चित करें कि अनुमत भूमिकाएं एक फ्लैट सरणी हैं
+    const allowedRoles = roles.flat(); 
+
+    return (req, res, next) => {
+        // यदि req.user परिभाषित नहीं है या यूजर की भूमिका अनुमत भूमिकाओं में शामिल नहीं है
+        if (!req.user || !allowedRoles.includes(req.user.role)) { 
+            const userRole = req.user && req.user.role ? req.user.role : 'None';
+            return next(
+                new ErrorHandler(
+                    `भूमिका: ${userRole} को इस संसाधन तक पहुँचने की अनुमति नहीं है।`, 
+                    403 // 403 Forbidden स्टेटस कोड
+                )
+            );
+        }
+        next(); // अगले मिडिलवेयर या राउट हैंडलर पर जाएँ
     };
 };
-
-module.exports = { protect, authorizeRoles };

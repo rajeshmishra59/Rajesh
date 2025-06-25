@@ -71,18 +71,26 @@ const studentSchema = new mongoose.Schema({
     checkInDate: { // छात्र के चेक-इन की वास्तविक तिथि
         type: Date,
         default: null,
-        // required: false, // `required` को हटा दिया गया है
     },
     checkOutDate: { // छात्र के चेक-आउट की वास्तविक तिथि
         type: Date,
         default: null,
-        // required: false, // `required` को हटा दिया गया है
     },
     bookingAmount: { // शुरुआती बुकिंग राशि जो सुरक्षा जमा के रूप में काम करती है
         type: Number,
-        default: 0, // अब यह आवश्यक नहीं, डिफ़ॉल्ट 0
+        default: 0,
         min: 0,
-        // required: false, // `required` को हटा दिया गया है
+    },
+    // ✨ NEW: Payment Mode Field for Booking ✨
+    paymentMode: {
+        type: String,
+        enum: ['Cash', 'Online Transfer', 'Card', 'UPI', 'Cheque', 'Other'], // भुगतान के प्रकार
+        default: null,
+    },
+    // ✨ NEW: Payment Date Field for Booking ✨
+    paymentDate: {
+        type: Date,
+        default: null,
     },
     assignedSpace: { // छात्र को असाइन किया गया बेड/कमरा
         type: mongoose.Schema.Types.ObjectId,

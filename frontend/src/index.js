@@ -2,10 +2,11 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import './App.css'; // ✨ यह लाइन CSS स्टाइल के लिए महत्वपूर्ण है ✨
+// ✨ सुनिश्चित करें कि './index.css' यहाँ सही ढंग से इम्पोर्ट किया गया है ✨
+// और index.css फ़ाइल में केवल CSS कोड ही हो, कोई JavaScript नहीं।
+import './index.css'; 
 import App from './App';
-import reportWebVitals from './reportWebVitals';
+// अन्य इम्पोर्ट्स (जैसे आपके AuthContext, आदि) यदि App.js में नहीं हैं तो यहाँ हो सकते हैं।
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -13,8 +14,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();

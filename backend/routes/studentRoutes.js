@@ -3,25 +3,23 @@
 const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/studentController');
-// ✨ UPDATED: Corrected import for authMiddleware ✨
-// authMiddleware एक ऑब्जेक्ट है जिसमें protect और authorizeRoles फंक्शन्स हैं।
-// हमें सीधे protect फंक्शन का उपयोग करना होगा।
-const { protect, authorizeRoles } = require('../middleware/authMiddleware'); 
+// ✨ UPDATED: authMiddleware.js से सही नाम इम्पोर्ट करें ✨
+const { isAuthenticatedUser, authorizeRoles } = require('../middleware/authMiddleware'); 
 
 // New route for student enrollment (basic details)
-// अब protect फंक्शन सीधे मिडलवेयर के रूप में उपयोग किया गया है
-router.post('/enroll', protect, studentController.enrollStudent);
+// अब isAuthenticatedUser फंक्शन सीधे मिडिलवेयर के रूप में उपयोग किया गया है
+router.post('/enroll', isAuthenticatedUser, studentController.enrollStudent);
 
 // Existing routes (ensure these are present)
-// सभी routes में protect मिडलवेयर का उपयोग करें
-router.post('/', protect, studentController.addStudent); 
-router.get('/', protect, studentController.getAllStudents);
-router.get('/:id', protect, studentController.getStudentById);
-router.put('/:id', protect, studentController.updateStudent);
-router.delete('/:id', protect, studentController.deleteStudent);
+// सभी routes में isAuthenticatedUser मिडिलवेयर का उपयोग करें
+router.post('/', isAuthenticatedUser, studentController.addStudent); 
+router.get('/', isAuthenticatedUser, studentController.getAllStudents);
+router.get('/:id', isAuthenticatedUser, studentController.getStudentById);
+router.put('/:id', isAuthenticatedUser, studentController.updateStudent);
+router.delete('/:id', isAuthenticatedUser, studentController.deleteStudent);
 
 // New route to get students by status
-router.get('/status', protect, studentController.getStudentsByStatus);
+router.get('/status', isAuthenticatedUser, studentController.getStudentsByStatus);
 
 
 module.exports = router;
