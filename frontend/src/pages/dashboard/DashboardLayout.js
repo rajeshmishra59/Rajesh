@@ -1,10 +1,5 @@
-// src/pages/dashboard/DashboardLayout.js
+// frontend/src/pages/dashboard/DashboardLayout.js
 import React, { useState } from "react";
-import KPISection from "./KPISection";
-import MetricsTable from "./MetricsTable";
-import OccupancyTab from "./TabContent/OccupancyTab";
-import RevenueTab from "./TabContent/RevenueTab";
-// import other tabs as needed...
 
 const tabs = [
   { id: "dashboard", label: "📈 Dashboard" },
@@ -21,7 +16,6 @@ const DashboardLayout = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
-
         {/* Header */}
         <div className="bg-gradient-to-r from-gray-800 to-blue-500 text-white text-center py-6 px-4">
           <h1 className="text-3xl font-light">📊 Instay Coliving Dashboard</h1>
@@ -45,12 +39,10 @@ const DashboardLayout = () => {
 
         {/* Tab Content */}
         <div className="p-6">
-          {activeTab === "dashboard" && <KPISection />}
-          {activeTab === "dashboard" &&  <MetricsTable />}
-          {activeTab === "occupancy" && <OccupancyTab />}
-          {activeTab === "revenue" && <RevenueTab />}
+          {activeTab === "dashboard" && (
+            <div className="text-xl font-semibold text-gray-700">Dashboard Content Here</div>
+          )}
         </div>
-        
       </div>
     </div>
   );
