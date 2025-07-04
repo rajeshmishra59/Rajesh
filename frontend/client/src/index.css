@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Custom dashboard colors */
+  --dashboard-primary: hsl(240, 86%, 60%);
+  --dashboard-secondary: hsl(0, 84%, 60%);
+  --dashboard-accent: hsl(25, 95%, 53%);
+  --dashboard-success: hsl(142, 76%, 36%);
+  --dashboard-warning: hsl(48, 96%, 53%);
+  --dashboard-gradient-start: hsl(215, 28%, 17%);
+  --dashboard-gradient-via: hsl(220, 70%, 50%);
+  --dashboard-gradient-end: hsl(221, 83%, 53%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .dashboard-header {
+    background: linear-gradient(to right, var(--dashboard-gradient-start), var(--dashboard-gradient-via), var(--dashboard-gradient-end));
+  }
+  
+  .kpi-card-orange-400 {
+    background: linear-gradient(to bottom right, hsl(25, 95%, 53%), hsl(25, 95%, 43%));
+  }
+  
+  .kpi-card-orange-500 {
+    background: linear-gradient(to bottom right, hsl(25, 95%, 43%), hsl(25, 95%, 33%));
+  }
+  
+  .kpi-card-orange-600 {
+    background: linear-gradient(to bottom right, hsl(25, 95%, 33%), hsl(25, 95%, 23%));
+  }
+  
+  .kpi-card-orange-700 {
+    background: linear-gradient(to bottom right, hsl(25, 95%, 23%), hsl(25, 95%, 13%));
+  }
+  
+  .nav-tab {
+    @apply px-6 py-4 border-b-2 border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300 font-medium whitespace-nowrap transition-all duration-300;
+  }
+  
+  .nav-tab.active {
+    @apply border-blue-500 text-blue-600 bg-blue-50;
+  }
+  
+  .nav-tab:hover {
+    @apply bg-blue-50;
+  }
+  
+  .transform-hover {
+    @apply transition-transform duration-200;
+  }
+  
+  .transform-hover:hover {
+    @apply -translate-y-1 scale-105;
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
